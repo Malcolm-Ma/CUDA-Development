@@ -87,7 +87,7 @@ void openmp_stage2(unsigned char* output_global_average) {
     for (t = 0; t < omp_TILES_X * omp_TILES_Y; ++t) {
         for (ch = 0; ch < omp_input_image.channels; ++ch) {
             omp_mosaic_value[t * omp_input_image.channels + ch] = (unsigned char)(omp_mosaic_sum[t * omp_input_image.channels + ch] / TILE_PIXELS);  // Integer division is fine here
-#pragma omp critical
+#pragma omp atomic
             whole_image_sum[ch] += omp_mosaic_value[t * omp_input_image.channels + ch];
         }
     }
