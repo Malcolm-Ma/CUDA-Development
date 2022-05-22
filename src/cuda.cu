@@ -9,6 +9,8 @@
 ///
 // Host copy of input image
 Image cuda_input_image;
+// Host copy of output image
+Image cuda_output_image;
 // Host copy of image tiles in each dimension
 unsigned int cuda_TILES_X, cuda_TILES_Y;
 // Pointer to device buffer for calculating the sum of each tile mosaic, this must be passed to a kernel to be used on device
@@ -21,6 +23,11 @@ unsigned char* d_input_image_data;
 unsigned char* d_output_image_data;
 // Pointer to device buffer for the global pixel average sum, this must be passed to a kernel to be used on device
 unsigned long long* d_global_pixel_sum;
+
+// skip init param
+unsigned long long* mosaic_sum;
+unsigned char* mosaic_value;
+Image input_image;
 
 void cuda_begin(const Image *input_image) {
     // These are suggested CUDA memory allocations that match the CPU implementation
@@ -53,7 +60,7 @@ void cuda_begin(const Image *input_image) {
 }
 void cuda_stage1() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_tile_sum(input_image, mosaic_sum);
+    skip_tile_sum(&cuda_input_image, mosaic_sum);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs
@@ -64,7 +71,7 @@ void cuda_stage1() {
 }
 void cuda_stage2(unsigned char* output_global_average) {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_compact_mosaic(TILES_X, TILES_Y, mosaic_sum, compact_mosaic, global_pixel_average);
+    skip_compact_mosaic(cuda_TILES_X, cuda_TILES_Y, mosaic_sum, mosaic_value, output_global_average);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation functions with the correct inputs
@@ -75,7 +82,7 @@ void cuda_stage2(unsigned char* output_global_average) {
 }
 void cuda_stage3() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_broadcast(input_image, compact_mosaic, output_image);
+    skip_broadcast(&cuda_input_image, mosaic_value, &cuda_output_image);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs
