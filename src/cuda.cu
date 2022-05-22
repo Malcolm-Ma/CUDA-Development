@@ -25,9 +25,10 @@ unsigned char* d_output_image_data;
 unsigned long long* d_global_pixel_sum;
 
 // skip init param
-unsigned long long* mosaic_sum;
-unsigned char* mosaic_value;
-Image input_image;
+Image cpu_input_image;
+Image cpu_output_image;
+unsigned long long* cpu_mosaic_sum;
+unsigned char* cpu_mosaic_value;
 
 void cuda_begin(const Image *input_image) {
     // These are suggested CUDA memory allocations that match the CPU implementation
@@ -57,10 +58,25 @@ void cuda_begin(const Image *input_image) {
 
     // Allocate and zero buffer for calculation global pixel average
     CUDA_CALL(cudaMalloc(&d_global_pixel_sum, input_image->channels * sizeof(unsigned long long)));
+    
+    
+    // allocate for skip dunctions
+    // Allocate buffer for calculating the sum of each tile mosaic
+    cpu_mosaic_sum = (unsigned long long*)malloc(cuda_TILES_X * cuda_TILES_Y * input_image->channels * sizeof(unsigned long long));
+    // Allocate buffer for storing the output pixel value of each tile
+    cpu_mosaic_value = (unsigned char*)malloc(cuda_TILES_X * cuda_TILES_Y * input_image->channels * sizeof(unsigned char));
+    // Allocate copy of input image
+    cpu_input_image = *input_image;
+    cpu_input_image.data = (unsigned char*)malloc(input_image->width * input_image->height * input_image->channels * sizeof(unsigned char));
+    memcpy(cpu_input_image.data, input_image->data, input_image->width * input_image->height * input_image->channels * sizeof(unsigned char));
+    // Allocate output image
+    cpu_output_image = *input_image;
+    cpu_output_image.data = (unsigned char*)malloc(input_image->width * input_image->height * input_image->channels * sizeof(unsigned char));
+
 }
 void cuda_stage1() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_tile_sum(&cuda_input_image, mosaic_sum);
+    skip_tile_sum(&cpu_input_image, cpu_mosaic_sum);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs
@@ -71,7 +87,7 @@ void cuda_stage1() {
 }
 void cuda_stage2(unsigned char* output_global_average) {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_compact_mosaic(cuda_TILES_X, cuda_TILES_Y, mosaic_sum, mosaic_value, output_global_average);
+    skip_compact_mosaic(cuda_TILES_X, cuda_TILES_Y, cpu_mosaic_sum, cpu_mosaic_value, output_global_average);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation functions with the correct inputs
@@ -82,7 +98,7 @@ void cuda_stage2(unsigned char* output_global_average) {
 }
 void cuda_stage3() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    // skip_broadcast(&cuda_input_image, mosaic_value, &cuda_output_image);
+    skip_broadcast(&cpu_input_image, cpu_mosaic_value, &cpu_output_image);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs
@@ -105,4 +121,18 @@ void cuda_end(Image *output_image) {
     CUDA_CALL(cudaFree(d_mosaic_sum));
     CUDA_CALL(cudaFree(d_input_image_data));
     CUDA_CALL(cudaFree(d_output_image_data));
+
+
+    // Release skip allocations
+    // Store return value
+    output_image->width = cpu_output_image.width;
+    output_image->height = cpu_output_image.height;
+    output_image->channels = cpu_output_image.channels;
+    memcpy(output_image->data, cpu_output_image.data, output_image->width * output_image->height * output_image->channels * sizeof(unsigned char));
+    // Release allocations
+    free(cpu_output_image.data);
+    free(cpu_input_image.data);
+    free(cpu_mosaic_value);
+    free(cpu_mosaic_sum);
+
 }
