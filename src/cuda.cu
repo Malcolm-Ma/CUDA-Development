@@ -60,7 +60,7 @@ void cuda_begin(const Image *input_image) {
 }
 void cuda_stage1() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    skip_tile_sum(&cuda_input_image, mosaic_sum);
+    // skip_tile_sum(&cuda_input_image, mosaic_sum);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs
@@ -71,7 +71,7 @@ void cuda_stage1() {
 }
 void cuda_stage2(unsigned char* output_global_average) {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    skip_compact_mosaic(cuda_TILES_X, cuda_TILES_Y, mosaic_sum, mosaic_value, output_global_average);
+    // skip_compact_mosaic(cuda_TILES_X, cuda_TILES_Y, mosaic_sum, mosaic_value, output_global_average);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation functions with the correct inputs
@@ -82,7 +82,7 @@ void cuda_stage2(unsigned char* output_global_average) {
 }
 void cuda_stage3() {
     // Optionally during development call the skip function with the correct inputs to skip this stage
-    skip_broadcast(&cuda_input_image, mosaic_value, &cuda_output_image);
+    // skip_broadcast(&cuda_input_image, mosaic_value, &cuda_output_image);
 
 #ifdef VALIDATION
     // TODO: Uncomment and call the validation function with the correct inputs

@@ -83,7 +83,7 @@ void openmp_stage2(unsigned char* output_global_average) {
 
     unsigned long long whole_image_sum[4] = { 0, 0, 0, 0 };  // Only 3 is required for the assignment, but this version hypothetically supports upto 4 channels
 
-#pragma omp parallel for private(ch) shared(omp_input_image) schedule(dynamic)
+#pragma omp parallel for private(ch) shared(omp_input_image)
     for (t = 0; t < omp_TILES_X * omp_TILES_Y; ++t) {
         for (ch = 0; ch < omp_input_image.channels; ++ch) {
             omp_mosaic_value[t * omp_input_image.channels + ch] = (unsigned char)(omp_mosaic_sum[t * omp_input_image.channels + ch] / TILE_PIXELS);  // Integer division is fine here
@@ -112,7 +112,7 @@ void openmp_stage3() {
     unsigned int tile_index, tile_offset, pixel_offset;
     // Broadcast the compact mosaic pixels back out to the full image size
     // For each tile
-#pragma omp parallel for private(t_y, tile_index, tile_offset, p_x, p_y, pixel_offset) shared(omp_input_image) schedule(dynamic)
+#pragma omp parallel for private(t_y, tile_index, tile_offset, p_x, p_y, pixel_offset) shared(omp_input_image)
     for (t_x = 0; t_x < omp_TILES_X; ++t_x) {
         for (t_y = 0; t_y < omp_TILES_Y; ++t_y) {
             tile_index = (t_y * omp_TILES_X + t_x) * omp_input_image.channels;
