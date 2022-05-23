@@ -192,6 +192,3 @@ $RECYCLE.BIN/
 *.exe
 *.out
 *.app
-
-# PNG files 
-*.png
