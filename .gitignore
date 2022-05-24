@@ -194,4 +194,5 @@ $RECYCLE.BIN/
 *.app
 
 # png
-/*.png
+**/input.png
+**/output.png
