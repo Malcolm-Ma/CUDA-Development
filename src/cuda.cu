@@ -101,7 +101,7 @@ void cuda_begin(const Image* input_image) {
 
 	// Allocate copy of input image
 	cuda_output_image = *input_image;
-	cuda_input_image.data = (unsigned char*)malloc(image_data_size);
+	cuda_output_image.data = (unsigned char*)malloc(image_data_size);
 
 	// Allocate and fill device buffer for storing input image data
 	CUDA_CALL(cudaMalloc(&d_input_image_data, image_data_size));
