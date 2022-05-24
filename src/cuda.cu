@@ -38,6 +38,10 @@ __constant__ unsigned int d_TILES_X, d_TILES_Y;
 unsigned long long* host_mosaic_sum;
 unsigned char* host_mosaic_value;
 
+__device__ void array_add_up(int* arr, int* arr2, int* result, unsigned int length) {
+	for (unsigned int i = 0; i < length; i++)
+		result[i] = arr[i] + arr2[i];
+}
 
 __global__ void sum_tile(unsigned char const* __restrict__ input_image_data, unsigned long long* mosaic_sum) {
 
@@ -52,6 +56,34 @@ __global__ void sum_tile(unsigned char const* __restrict__ input_image_data, uns
 		const unsigned char pixel = input_image_data[tile_offset + pixel_offset + ch];
 		// sum up all the r/g/b channel in current tile
 		atomicAdd(&mosaic_sum[tile_index + ch], pixel);
+	}
+}
+
+__global__ void sum_tile_shfl(unsigned char const* __restrict__ input_image_data, unsigned long long* mosaic_sum) {
+	/*
+	* gridDim.x * blockIdx.y: block number in previous lines
+	*/
+	const unsigned int tile_index = (gridDim.x * blockIdx.y + blockIdx.x) * d_CHANNELS;
+	const unsigned int tile_offset = (TILE_SIZE * TILE_SIZE * gridDim.x * blockIdx.y + TILE_SIZE * blockIdx.x) * d_CHANNELS;
+	const unsigned int pixel_offset = (blockDim.x * gridDim.x * threadIdx.y + threadIdx.x) * d_CHANNELS;
+
+	unsigned long long pixel_r = (unsigned long long)input_image_data[tile_offset + pixel_offset];
+	unsigned long long pixel_g = (unsigned long long)input_image_data[tile_offset + pixel_offset + 1];
+	unsigned long long pixel_b = (unsigned long long)input_image_data[tile_offset + pixel_offset + 2];
+
+	__syncthreads();
+
+	for (unsigned int offset = 16; offset > 0; offset >>= 1) {
+		pixel_r += __shfl_down(pixel_r, offset);
+		pixel_g += __shfl_down(pixel_g, offset);
+		pixel_b += __shfl_down(pixel_b, offset);
+	}
+
+	if (threadIdx.x % 32 == 0) {
+
+		atomicAdd(&mosaic_sum[tile_index], pixel_r);
+		atomicAdd(&mosaic_sum[tile_index + 1], pixel_g);
+		atomicAdd(&mosaic_sum[tile_index + 2], pixel_b);
 	}
 }
 
@@ -132,16 +164,17 @@ void cuda_stage1() {
 	// skip_tile_sum(&host_input_image, host_mosaic_sum);
 
 	// init params for kernel
+	dim3 blocksPerGrid(cuda_TILES_X, cuda_TILES_Y, 1);
 	const unsigned int block_width = (unsigned int)TILE_SIZE;
 	// block per grid is equal to the tile_x and tile_y
-	dim3 blocksPerGrid(cuda_TILES_X, cuda_TILES_Y, 1);
 	dim3 threadsPerBlock(block_width, block_width, 1);
-
+	
 	// init sum array by 0
 	CUDA_CALL(cudaMemset(d_mosaic_sum, 0, cuda_TILES_X * cuda_TILES_Y * cuda_input_image.channels * sizeof(unsigned long long)));
 
 	// Run CUDA
-	sum_tile << < blocksPerGrid, threadsPerBlock >> > (d_input_image_data, d_mosaic_sum);
+	//sum_tile << < blocksPerGrid, threadsPerBlock >> > (d_input_image_data, d_mosaic_sum);
+	sum_tile_shfl << < blocksPerGrid, threadsPerBlock >> > (d_input_image_data, d_mosaic_sum);
 	cudaDeviceSynchronize();
 
 #ifdef VALIDATION
@@ -160,8 +193,6 @@ void cuda_stage2(unsigned char* output_global_average) {
 
 	unsigned long long* whole_image_sum = (unsigned long long*)malloc(cuda_input_image.channels * sizeof(unsigned long long));
 	memset(whole_image_sum, 0, cuda_input_image.channels * sizeof(unsigned long long));
-
-	CUDA_CALL(cudaMemcpy(d_mosaic_sum, host_mosaic_sum, cuda_TILES_X * cuda_TILES_Y * cuda_input_image.channels * sizeof(unsigned long long), cudaMemcpyHostToDevice));
 
 	// blockIdx.z refer to the max channels supported
 	dim3 threadsPerBlock(4, 4, 3);
