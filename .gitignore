@@ -192,3 +192,6 @@ $RECYCLE.BIN/
 *.exe
 *.out
 *.app
+
+# png
+./*.png
