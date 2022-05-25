@@ -168,7 +168,7 @@ void cuda_stage1() {
 	const unsigned int block_width = (unsigned int)TILE_SIZE;
 	// block per grid is equal to the tile_x and tile_y
 	dim3 threadsPerBlock(block_width, block_width, 1);
-	
+
 	// init sum array by 0
 	CUDA_CALL(cudaMemset(d_mosaic_sum, 0, cuda_TILES_X * cuda_TILES_Y * cuda_input_image.channels * sizeof(unsigned long long)));
 
