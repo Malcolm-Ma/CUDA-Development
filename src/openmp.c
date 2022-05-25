@@ -48,7 +48,7 @@ void openmp_stage1() {
     // Reset sum memory to 0
     memset(omp_mosaic_sum, 0, omp_TILES_X * omp_TILES_Y * omp_input_image.channels * sizeof(unsigned long long));
     // Sum pixel data within each tile
-#pragma omp parallel for private(t_y, tile_index, tile_offset, p_x, p_y, pixel_offset, ch, pixel) shared(omp_input_image) schedule(dynamic) collapse(2)
+#pragma omp parallel for private(t_y, tile_index, tile_offset, p_x, p_y, pixel_offset, ch, pixel) shared(omp_input_image) schedule(dynamic)
     for (t_x = 0; t_x < omp_TILES_X; ++t_x) {
         for (t_y = 0; t_y < omp_TILES_Y; ++t_y) {
             tile_index = (t_y * omp_TILES_X + t_x) * omp_input_image.channels;

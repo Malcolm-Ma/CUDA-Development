@@ -22,8 +22,6 @@ void validate_tile_sum(const Image* input_image, unsigned long long* test_mosaic
         for (unsigned int t_y = 0; t_y < TILES_Y; ++t_y) {
             const unsigned int tile_index = (t_y * TILES_X + t_x) * input_image->channels;
             for (int ch = 0; ch < input_image->channels; ++ch) {
-                //printf("mosaic_sum #%d: %d\n", tile_index + ch, mosaic_sum[tile_index + ch]);
-                //printf("test_mosaic_sum #%d: %d\n\n", tile_index + ch, test_mosaic_sum[tile_index + ch]);
                 if (mosaic_sum[tile_index + ch] != test_mosaic_sum[tile_index + ch]) {
                     bad_tiles++;
                     break;
