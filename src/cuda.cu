@@ -38,11 +38,6 @@ __constant__ unsigned int d_TILES_X, d_TILES_Y;
 unsigned long long* host_mosaic_sum;
 unsigned char* host_mosaic_value;
 
-__device__ void array_add_up(int* arr, int* arr2, int* result, unsigned int length) {
-	for (unsigned int i = 0; i < length; i++)
-		result[i] = arr[i] + arr2[i];
-}
-
 __global__ void sum_tile(unsigned char const* __restrict__ input_image_data, unsigned long long* mosaic_sum) {
 
 	/*
